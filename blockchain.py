@@ -4,12 +4,12 @@ import os
 from datetime import datetime
 
 class Block:
-    def __init__(self, index, data, previous_hash):
+    def __init__(self, index, data, previous_hash, timestamp=None, hash_value=None):
         self.index = index
-        self.timestamp = str(datetime.utcnow())
+        self.timestamp = timestamp if timestamp else str(datetime.utcnow())
         self.data = data
         self.previous_hash = previous_hash
-        self.hash = self.calculate_hash()
+        self.hash = hash_value if hash_value else self.calculate_hash()
 
     def calculate_hash(self):
         block_string = (
@@ -48,10 +48,10 @@ class Blockchain:
                     block = Block(
                         block_data["index"],
                         block_data["data"],
-                        block_data["previous_hash"]
+                        block_data["previous_hash"],
+                        block_data["timestamp"],
+                        block_data["hash"]
                     )
-                    block.timestamp = block_data["timestamp"]
-                    block.hash = block_data["hash"]
                     self.chain.append(block)
         else:
             genesis = self.create_genesis_block()
