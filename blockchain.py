@@ -3,13 +3,14 @@ import json
 import os
 from datetime import datetime
 
+
 class Block:
-    def __init__(self, index, data, previous_hash, timestamp=None, hash_value=None):
+    def __init__(self, index, data, previous_hash):
         self.index = index
-        self.timestamp = timestamp if timestamp else str(datetime.utcnow())
+        self.timestamp = str(datetime.utcnow())
         self.data = data
         self.previous_hash = previous_hash
-        self.hash = hash_value if hash_value else self.calculate_hash()
+        self.hash = self.calculate_hash()
 
     def calculate_hash(self):
         block_string = (
@@ -19,6 +20,7 @@ class Block:
             self.previous_hash
         )
         return hashlib.sha256(block_string.encode()).hexdigest()
+
 
 class Blockchain:
     def __init__(self, filename="ledger.json"):
@@ -45,13 +47,16 @@ class Blockchain:
                 chain_data = json.load(f)
                 self.chain = []
                 for block_data in chain_data:
-                    block = Block(
-                        block_data["index"],
-                        block_data["data"],
-                        block_data["previous_hash"],
-                        block_data["timestamp"],
-                        block_data["hash"]
-                    )
+                    # Use object.__new__ to skip __init__ entirely.
+                    # This prevents a fresh timestamp from being generated,
+                    # so calculate_hash() in validate_chain() will correctly
+                    # recompute from the stored data and detect tampering.
+                    block = object.__new__(Block)
+                    block.index = block_data["index"]
+                    block.timestamp = block_data["timestamp"]
+                    block.data = block_data["data"]
+                    block.previous_hash = block_data["previous_hash"]
+                    block.hash = block_data["hash"]
                     self.chain.append(block)
         else:
             genesis = self.create_genesis_block()
@@ -63,10 +68,12 @@ class Blockchain:
             current = self.chain[i]
             previous = self.chain[i - 1]
 
+            # Recompute hash from stored fields and compare to stored hash
             if current.hash != current.calculate_hash():
-                return False
+                return False, f"Block {i} hash mismatch (data tampered)"
 
+            # Check chain linkage
             if current.previous_hash != previous.hash:
-                return False
+                return False, f"Block {i} previous_hash broken (chain broken)"
 
-        return True
+        return True, "Blockchain is valid"
