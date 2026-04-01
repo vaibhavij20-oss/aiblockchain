@@ -15,7 +15,7 @@
             "gender": "Female",
             "ageBroad": "18-23",
             "citizenship": "Indian",
-            "risk_score": 0.945,
+            "risk_score": 999,
             "prediction": "High"
         },
         "previous_hash": "b81cdc4aa16394762e730b2e51a8c5a381550fce9bb6a52f617e42837d68aeb1",
